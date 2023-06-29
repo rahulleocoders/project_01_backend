@@ -6,5 +6,7 @@ urlpatterns = [
     path('register/',RegistrationAPI.as_view(),name='register'),
     path('otpverification/',OtpVerification.as_view(),name='otpverification'),
 
+    path('botroleapi/',BotRoleApi.as_view(),name='botroleapi'),
+    path('deleteuserbot/<int:id>/',DeleteUserBot.as_view(),name='deleteuserbot'),
 
 ]
