@@ -15,16 +15,20 @@ import os
 import uuid
 from rest_framework import generics, status, views, permissions
 import jwt
+from django.core.mail import send_mail, EmailMessage
+from django.template.loader import render_to_string
 from django.conf import settings
 from django.urls import reverse 
 from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import update_last_login
-from datetime import date
+from datetime import datetime, timedelta
 from .models import User
 from .util import *
 from .models import *
 from .serializer import *
+from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeError
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 def get_user_usertype_userprofile(request,id):
     if User.objects.filter(id=id):
@@ -115,9 +119,47 @@ class BulkInvitationAPI(APIView):
             if data['user_id'] is not None and data['team_list'] is not None:
                 user, usertype = get_user_usertype_userprofile(request, data['user_id'])
                 if user:
-                    emails = [team_member['email'] for team_member in data['team_list']]
-                    
-                    return Response("yess")
+                    user_emails = User.objects.values_list('username', flat=True)
+                    team_emails = [team_member['email'] for team_member in data['team_list']]
+                    remaining_emails = [email for email in team_emails if email not in user_emails]
+                    if remaining_emails:
+                        team_invite_emails = TeamInvite.objects.values_list('email', flat=True)
+                        remaining_emails = [email for email in remaining_emails if email not in team_invite_emails]
+                        if remaining_emails:
+                            expiry_time = datetime.now() + timedelta(hours=3)
+                            invites = []
+                            for email_data in data['team_list']:
+                                if email_data['email'] in remaining_emails:
+                                    invite_obj = TeamInvite(
+                                        user=user,
+                                        first_name=email_data['first_name'],
+                                        last_name=email_data['last_name'],
+                                        email=email_data['email'],
+                                        country_code=email_data['country_code'],
+                                        contact=email_data['contact'],
+                                        expiration_date=expiry_time
+                                    )
+                                    invites.append(invite_obj)
+                            TeamInvite.objects.bulk_create(invites)
+                            for invite_obj in invites:
+                                uid = urlsafe_base64_encode(force_bytes(invite_obj.id))
+                                absurl = 'http://127.0.0.1:8000/'
+                                email_subject = 'Invitation to join our site'
+                                email_body = render_to_string(
+                                    'email_template.html',
+                                    {'absurl': absurl, 'uid': uid, 'token': str(invite_obj.token)}
+                                )
+                                email = EmailMessage(
+                                    email_subject,
+                                    email_body,
+                                    'invitations@example.com',
+                                    [invite_obj.email]
+                                )
+                                email.send()
+
+                            return Response({'message': 'Emails sent successfully'})
+                    else:
+                        return Response(self, "Email is already used")
                 else:
                     return Response(error(self,'User Not Found'))
             else:

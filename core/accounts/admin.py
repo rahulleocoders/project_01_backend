@@ -8,3 +8,7 @@ class User_Admin(admin.ModelAdmin):
 @admin.register(UserType)
 class UserType_Admin(admin.ModelAdmin):
     list_display = ['id','user','usertype']
+
+@admin.register(TeamInvite)
+class TeamInvite_Admin(admin.ModelAdmin):
+    list_display = ['id', 'first_name', 'last_name', 'email', 'country_code', 'contact', 'expiration_date', 'is_accept']
