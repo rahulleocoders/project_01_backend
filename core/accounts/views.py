@@ -27,6 +27,7 @@ from .models import *
 
 
 
+
 class LoginAPI(APIView):
     def post(self, request, format=None):
         pass
@@ -34,20 +35,24 @@ class LoginAPI(APIView):
 
 class RegistrationAPI(APIView):
     def post(self, request, format=None):
-        # first_name = request.data.get('first_name', '')
-        # last_name= request.data.get('last_name', '')
-        # email=request.data.get('email', '')
-        # country_code=request.data.get('country_code', '')
-        # contact=request.data.get('contact', '')
-        # company_name=request.data.get('company_name', '')
-        # password=request.data.get('password', '')
+        first_name = request.data.get('first_name', '')
+        last_name= request.data.get('last_name', '')
+        email=request.data.get('email', '')
+        country_code=request.data.get('country_code', '')
+        contact=request.data.get('contact', '')
+        company_name=request.data.get('company_name', '')
+        password=request.data.get('password', '')
         # conform_password=request.data.get('conform_password', '')
-        # aggrement=request.data.get('aggrement', '')
-
-        # userobj=User.objects.create(first_name=first_name, last_name=last_name, email=email, password=password,conform_password=conform_password,company_name=company_name,
-        #                             country_code=country_code,contact=contact,aggrement=aggrement)
-        # print(userobj)
-        return render(request, "yes")
+        aggrement=request.data.get('aggrement', '')
+        userobj=User.objects.filter(email=email)
+        if userobj:
+            return Response(success(self,"User already exist with this email address"))
+        else:
+            userobj=User.objects.create(username=first_name, last_name=last_name, email=email, password=password,company_name=company_name,
+                                        country_code=country_code,contact=contact,aggrement=aggrement)
+            print(userobj)
+            return Response(success(self,"Registration is successfull"))
+                   
         
 
 
