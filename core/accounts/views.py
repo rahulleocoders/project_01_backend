@@ -29,6 +29,45 @@ from .models import *
 from .serializer import *
 from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+import hashlib
+import base64
+from Cryptodome.Cipher import AES
+import os
+from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeError
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+
+key = '01234567890123456789015545678901'
+
+def encrypt(key, plaintext):
+    # Convert the key and plaintext to bytes
+    key = key.encode('utf-8')
+    plaintext = plaintext.encode('utf-8')
+    # Generate a random initialization vector
+    iv = os.urandom(16)
+    # Create a new Cipher object
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    # Pad the plaintext to a multiple of 16 bytes
+    padding_length = 16 - (len(plaintext) % 16)
+    plaintext += bytes([padding_length]) * padding_length
+    # Encrypt the plaintext and return the ciphertext and initialization vector
+    ciphertext = cipher.encrypt(plaintext)
+    return base64.b64encode(iv + ciphertext).decode('utf-8')
+
+def decrypt(key, ciphertext):
+    # Convert the key and ciphertext to bytes
+    key = key.encode('utf-8')
+    ciphertext = base64.b64decode(ciphertext.encode('utf-8'))
+    # Extract the initialization vector
+    iv = ciphertext[:16]
+    ciphertext = ciphertext[16:]
+    # Create a new Cipher object
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    # Decrypt the ciphertext and remove the padding
+    plaintext = cipher.decrypt(ciphertext)
+    padding_length = plaintext[-1]
+    return plaintext[:-padding_length].decode('utf-8')
+
 
 def get_user_usertype_userprofile(request,id):
     if User.objects.filter(id=id):
@@ -164,6 +203,36 @@ class BulkInvitationAPI(APIView):
                     return Response(error(self,'User Not Found'))
             else:
                 return Response(error(self,"user_id and team_list are required"))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class ApiSettingAPI(APIView):
+    def post(self, request, format = None):
+        try:
+            data = request.data
+            if data['user_id'] is not None and data['API_Key'] is not None:
+                user, usertype = get_user_usertype_userprofile(request, data['user_id'])
+                if user:
+                    encrypted_api = encrypt(key, data['API_Key'])
+                    apiobj = AISecrateSetting.objects.create(
+                        user = user, api_key = encrypted_api, is_verfied = True
+                    )
+                    serializer = AISecreateSerializer(apiobj).data
+                    return Response(success(self, serializer))
+                else:
+                    return Response(error(self,'User Not Found'))
+            else:
+                return Response(error(self,"user_id and API_Key are required"))
+        except Exception as e:
+            return Response(error(self,str(e)))
+    
+    def delete(self, request, format = None, id=None):
+        try:
+            if id is not None:
+                apiobj = AISecrateSetting.objects.get(id=id).delete()
+                return Response(success(self,'Deleted Successfully'))
+            else:
+                return Response(error(self, "id is required"))
         except Exception as e:
             return Response(error(self,str(e)))
 
