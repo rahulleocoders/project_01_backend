@@ -23,6 +23,7 @@ from django.contrib.auth.models import update_last_login
 from datetime import date
 from .util import *
 from .models import *
+from .serializer import *
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -42,7 +43,9 @@ class LoginAPI(APIView):
                     user = authenticate(username = userobj.username, password = data['password'])
                     if user is not None:
                         token = get_tokens_for_user(user)
-                        return Response(success(self, token))
+                        serializer = UserSerializer(user).data
+                        usertype = UserType.objects.get(user = user)
+                        return Response(success(self, {'user_datails':serializer, 'token':token, 'usertype':usertype.usertype}))
                     else:
                         return Response(error(self,'User Not Found'))
                 else:
