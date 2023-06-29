@@ -2,6 +2,25 @@ from django.db import models
 from .basemodel import *
 import secrets
 from django.contrib.auth.models import AbstractUser, User
+from django_rest_passwordreset.signals import reset_password_token_created
+from django.dispatch import receiver
+from django.core.mail import send_mail
+from django.urls import reverse
+
+
+@receiver(reset_password_token_created)
+def password_reset_token_created(sender, instance, reset_password_token, *args, **kwargs):
+    email_plaintext_message = "{}?token={}".format(reverse('password_reset:reset-password-request'), reset_password_token.key)
+    send_mail(
+        # title:
+        "Password Reset for {title}".format(title="project1.com"),
+        # message:
+        email_plaintext_message,
+        # from:
+        "noreply@somehost.local",
+        # to:
+        [reset_password_token.user.email]
+    ) 
 
 class User(AbstractUser):
    company_name = models.CharField(max_length=255, null=True, blank=True)
