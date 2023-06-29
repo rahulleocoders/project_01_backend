@@ -35,18 +35,42 @@ class RegistrationAPI(APIView):
         contact=request.data.get('contact', '')
         company_name=request.data.get('company_name', '')
         password=request.data.get('password', '')
-        # conform_password=request.data.get('conform_password', '')
+        conform_password=request.data.get('conform_password', '')
         aggrement=request.data.get('aggrement', '')
-        userobj=User.objects.filter(email=email)
-        if userobj:
-            return Response(success(self,"User already exist with this email address"))
+        if password == conform_password:
+            userobj=User.objects.filter(username=email)
+            if userobj:
+                return Response(success(self,"User already exist with this email address"))
+            else:
+                userobj=User.objects.create(first_name=first_name, last_name=last_name, username=email, password=password,company_name=company_name,
+                                            country_code=country_code,contact=contact,aggrement=aggrement)
+                userobj.is_active =False
+                userobj.is_contact_verfication = False
+                userobj.is_email_verfication = False
+                userobj.save()
+                if TeamInvite.objects.filter(email = userobj.email):
+                    usertypeobj = UserType.objects.create(user = userobj, usertype = 2)
+                    team_page = False
+                else:
+                    usertypeobj = UserType.objects.create(user = userobj, usertype = 1)
+                    team_page = True
+                return Response(success(self,"Registration is successfull"))
         else:
-            userobj=User.objects.create(username=first_name, last_name=last_name, email=email, password=password,company_name=company_name,
-                                        country_code=country_code,contact=contact,aggrement=aggrement)
-            print(userobj)
-            return Response(success(self,"Registration is successfull"))
-                   
+            password != conform_password
+            return Response(error(self,"Password is Not match"))
+
+class OtpVerification(APIView):
+    def post(self, request):
+        email=request.data.get('email','')
+        contact=request.data.get('contact','')
+        is_contact_verfication=request.data.get('is_contact_verfication','False')
+        is_email_verfication=request.data.get('is_email_verfication','False')
+        userobj=User.objects.update(username=email,contact=contact,is_contact_verfication=is_contact_verfication,
+                                is_email_verfication=is_email_verfication)
+        return Response(success(self,"OTP verified successfully"))
         
+
+
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
