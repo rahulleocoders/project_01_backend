@@ -24,15 +24,27 @@ from datetime import date
 from .util import *
 from .models import *
 
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+
 class LoginAPI(APIView):
     def post(self, request, format=None):
         try:
             data = request.data # {"emai":"yagnesh@yopmail.com","password":"1234"}
             if data['email'] is not None and data['password'] is not None:
                 if User.objects.filter(username = data['email']): # checking
-                    user = User.objects.get(username = data['email'])
-                    print(user)
-                    return Response("yess")
+                    userobj = User.objects.get(username = data['email'])
+                    user = authenticate(username = userobj.username, password = data['password'])
+                    if user is not None:
+                        token = get_tokens_for_user(user)
+                        return Response(success(self, token))
+                    else:
+                        return Response(error(self,'User Not Found'))
                 else:
                     return Response(error(self,"Email is not valid"))
             else:
