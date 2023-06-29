@@ -25,6 +25,14 @@ from .util import *
 from .models import *
 from .serializer import *
 
+def get_user_usertype_userprofile(request,id):
+    if User.objects.filter(id=id):
+        user=User.objects.get(id=id)
+        usertype=UserType.objects.get(user=user)
+        return user,usertype
+    else:
+        return False,False
+
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
 
@@ -45,7 +53,8 @@ class LoginAPI(APIView):
                         token = get_tokens_for_user(user)
                         serializer = UserSerializer(user).data
                         usertype = UserType.objects.get(user = user)
-                        return Response(success(self, {'user_datails':serializer, 'token':token, 'usertype':usertype.usertype}))
+                        context = {'user_datails':serializer, 'token':token, 'usertype':usertype.usertype}
+                        return Response(success(self, context))
                     else:
                         return Response(error(self,'User Not Found'))
                 else:
@@ -60,7 +69,13 @@ class BulkInvitationAPI(APIView):
         try:
             data = request.data
             if data['user_id'] is not None and data['team_list'] is not None:
-                pass
+                user, usertype = get_user_usertype_userprofile(request, data['user_id'])
+                if user:
+                    emails = [team_member['email'] for team_member in data['team_list']]
+                    print(emails)
+                    return Response("yess")
+                else:
+                    return Response(error(self,'User Not Found'))
             else:
                 return Response(error(self,"user_id and team_list are required"))
         except Exception as e:
