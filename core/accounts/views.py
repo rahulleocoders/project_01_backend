@@ -24,7 +24,8 @@ from datetime import date
 from .models import User
 from .util import *
 from .models import *
-
+from rest_framework.decorators import action
+from django.contrib.auth.hashers import check_password
 
 class RegistrationAPI(APIView):
     def post(self, request, format=None):
@@ -59,17 +60,40 @@ class RegistrationAPI(APIView):
             password != conform_password
             return Response(error(self,"Password is Not match"))
 
-class OtpVerification(APIView):
-    def post(self, request):
-        email=request.data.get('email','')
-        contact=request.data.get('contact','')
-        is_contact_verfication=request.data.get('is_contact_verfication','False')
-        is_email_verfication=request.data.get('is_email_verfication','False')
-        userobj=User.objects.update(username=email,contact=contact,is_contact_verfication=is_contact_verfication,
-                                is_email_verfication=is_email_verfication)
-        return Response(success(self,"OTP verified successfully"))
-        
 
+    def put(self, request,id=None):
+        try:
+            is_contact_verfication=request.data.get('is_contact_verfication','False')
+            is_email_verfication=request.data.get('is_email_verfication','False')
+            userobj=User.objects.get(id=id)
+            userobj.is_contact_verfication=is_contact_verfication
+            userobj.is_email_verfication=is_email_verfication
+            userobj.is_active=True
+            userobj.save()
+            return Response(success(self,"OTP verified successfully"))
+        except:
+            return Response(error(self,"Invalid data"))
+
+
+class ChangePassword(APIView):       
+    def put(self,request, id=None):
+        old_password = request.data.get('old_password','')
+        new_password=request.data.get('new_password','')
+        conform_password = request.data.get('conform_password','')
+        if User.objects.filter(id=id):
+            userobj=User.objects.get(id=id)
+            userobj=authenticate(username=userobj.username,password=old_password)
+            if userobj is not None:
+                if new_password == conform_password:
+                    userobj.set_password(new_password)
+                    userobj.save()
+                    return Response(success(self,"password updated"))
+                else:
+                    return Response(error(self,'Password and conform password Not Matched'))
+            else:
+                return Response(error(self,"User not found"))
+        else:
+            return Response(error(self,"Invalid data"))
 
 
 def get_tokens_for_user(user):
@@ -99,3 +123,7 @@ class LoginAPI(APIView):
                 return Response(error(self,"Email and Password are required"))
         except Exception as e:
             return Response(error(self,str(e)))
+        
+
+
+
