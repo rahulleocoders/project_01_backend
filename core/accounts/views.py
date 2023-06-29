@@ -23,6 +23,7 @@ from django.contrib.auth.models import update_last_login
 from datetime import date
 from .util import *
 from .models import *
+from .serializers import *
 
 class LoginAPI(APIView):
     def post(self, request, format=None):
@@ -39,3 +40,39 @@ class LoginAPI(APIView):
                 return Response(error(self,"Email and Password are required"))
         except Exception as e:
             return Response(error(self,str(e)))
+
+
+class BotRoleApi(APIView):
+    def post(self,request,format=None):
+        try:
+            data=request.data
+            user_id=data.get('user_id',None)
+            bot = data.get('bot', None)
+            if user_id is not None:
+                # userobj=User.objects.get(id=user_id)
+                serializer=BotRole.objects.create(user_id=user_id,bot=bot)
+                if serializer.is_valid():
+                    serializer.save()
+
+
+                return Response(success(self, serializer.data))
+            else:
+                return Response(error(self, "User Not Found"))
+        except:
+                return Response(error(self, "Invalid Data"))
+        
+class DeleteUserBot(APIView):
+    def delete(self, request, format=None, id=None):
+        try:
+            if id is not None:
+                user_bot = BotRole.objects.get(id=id)
+                user_bot.delete()
+
+                return Response(success(self, "BotRole deleted successfully."))
+            else:
+                return Response(error(self, "Invalid Data"))
+        except Exception as e:
+            return Response(error(self, f'Error: {str(e)}'))
+        
+
+
