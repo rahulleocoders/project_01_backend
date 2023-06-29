@@ -49,30 +49,53 @@ class BotRoleApi(APIView):
             user_id=data.get('user_id',None)
             bot = data.get('bot', None)
             if user_id is not None:
-                # userobj=User.objects.get(id=user_id)
-                serializer=BotRole.objects.create(user_id=user_id,bot=bot)
-                if serializer.is_valid():
-                    serializer.save()
+                botroleobj=BotRole.objects.create(user_id=user_id,bot=bot)
+                botroleobj.save()
 
-
-                return Response(success(self, serializer.data))
+                return Response(success(self, "bot data created successfully"))
             else:
                 return Response(error(self, "User Not Found"))
         except:
                 return Response(error(self, "Invalid Data"))
         
-class DeleteUserBot(APIView):
+    
+    def get(self, request, format=None):
+        try:
+            bot_roles = BotRole.objects.all()
+            serializer = BotRoleSerializer(bot_roles, many=True)
+            return Response(success(self, serializer.data))
+        except:
+            return Response(error(self, "Data Not Found"))
+
+    
     def delete(self, request, format=None, id=None):
         try:
             if id is not None:
                 user_bot = BotRole.objects.get(id=id)
                 user_bot.delete()
-
                 return Response(success(self, "BotRole deleted successfully."))
             else:
                 return Response(error(self, "Invalid Data"))
         except Exception as e:
             return Response(error(self, f'Error: {str(e)}'))
+      
+            
+
+    def put(self, request, format=None):
+        try:
+            data = request.data
+            bot_id = data.get('bot_id', None)
+            bot = data.get('bot', None)
+            if bot_id is not None:
+                    bot_role = BotRole.objects.get(id=bot_id)
+                    bot_role.bot = bot
+                    bot_role.save()
+                    return Response(success(self, "Bot data updated successfully"))
+                
+            else:
+                return Response(error(self, "Bot ID Not Found"))
+        except:
+            return Response(error(self, "Invalid Data"))
         
 
 
