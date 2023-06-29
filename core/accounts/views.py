@@ -21,7 +21,21 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import update_last_login
 from datetime import date
+from .util import *
+from .models import *
 
 class LoginAPI(APIView):
     def post(self, request, format=None):
-        pass
+        try:
+            data = request.data # {"emai":"yagnesh@yopmail.com","password":"1234"}
+            if data['email'] is not None and data['password'] is not None:
+                if User.objects.filter(username = data['email']): # checking
+                    user = User.objects.get(username = data['email'])
+                    print(user)
+                    return Response("yess")
+                else:
+                    return Response(error(self,"Email is not valid"))
+            else:
+                return Response(error(self,"Email and Password are required"))
+        except Exception as e:
+            return Response(error(self,str(e)))
