@@ -21,7 +21,26 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import update_last_login
 from datetime import date
-
+from .models import User
 class LoginAPI(APIView):
     def post(self, request, format=None):
         pass
+
+
+class RegistrationAPI(APIView):
+    def post(self, request, format=None):
+        # first_name = request.data.get('first_name', '')
+        # last_name= request.data.get('last_name', '')
+        # email=request.data.get('email', '')
+        # country_code=request.data.get('country_code', '')
+        # contact=request.data.get('contact', '')
+        # company_name=request.data.get('company_name', '')
+        # password=request.data.get('password', '')
+        # conform_password=request.data.get('conform_password', '')
+        # aggrement=request.data.get('aggrement', '')
+
+        # userobj=User.objects.create(first_name=first_name, last_name=last_name, email=email, password=password,conform_password=conform_password,company_name=company_name,
+        #                             country_code=country_code,contact=contact,aggrement=aggrement)
+        # print(userobj)
+        return render(request, "yes")
+        
