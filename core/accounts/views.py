@@ -51,6 +51,17 @@ class LoginAPI(APIView):
                 else:
                     return Response(error(self,"Email is not valid"))
             else:
-                return Response(error(self,"Email and Password are required"))
+                return Response(error(self,"email and password are required"))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class BulkInvitationAPI(APIView):
+    def post(self, request, format = None):
+        try:
+            data = request.data
+            if data['user_id'] is not None and data['team_list'] is not None:
+                pass
+            else:
+                return Response(error(self,"user_id and team_list are required"))
         except Exception as e:
             return Response(error(self,str(e)))
