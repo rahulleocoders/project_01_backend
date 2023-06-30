@@ -15,9 +15,3 @@ class BotRoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = BotRole
         fields = "__all__"
-
-class BotRoleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BotRole
-        fields = "__all__"
-
