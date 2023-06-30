@@ -11,6 +11,6 @@ urlpatterns = [
 
     path('botroleapi/',BotRoleApi.as_view(),name='botroleapi'),
     path('botroleapi/<int:id>/',BotRoleApi.as_view(),name='botroleapi'),
-    # path('deleteuserbot/<int:id>/',DeleteUserBot.as_view(),name='deleteuserbot'),
+   
 
 ]
