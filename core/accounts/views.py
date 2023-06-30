@@ -83,37 +83,25 @@ def get_tokens_for_user(user):
 
 class RegistrationAPI(APIView):
     def post(self, request, format=None):
-        first_name = request.data.get('first_name', '')
-        last_name= request.data.get('last_name', '')
-        email=request.data.get('email', '')
-        country_code=request.data.get('country_code', '')
-        contact=request.data.get('contact', '')
-        company_name=request.data.get('company_name', '')
-        password=request.data.get('password', '')
-        conform_password=request.data.get('conform_password', '')
-        aggrement=request.data.get('aggrement', '')
-        if password == conform_password:
-            userobj=User.objects.filter(username=email)
-            if userobj:
-                return Response(success(self,"User already exist with this email address"))
-            else:
-                userobj=User.objects.create(first_name=first_name, last_name=last_name, username=email, password=password,company_name=company_name,
-                                            country_code=country_code,contact=contact,aggrement=aggrement)
-                userobj.is_active =False
-                userobj.is_contact_verfication = False
-                userobj.is_email_verfication = False
-                userobj.save()
-                if TeamInvite.objects.filter(email = userobj.email):
-                    usertypeobj = UserType.objects.create(user = userobj, usertype = 2)
-                    team_page = False
+        data = request.data
+        if data['first_name'] is not None and data['last_name'] is not None and data['email'] is not None and data['country_code'] is not None and data['contact'] is not None and data['company_name'] is not None and data['password'] is not None and data['conform_password'] is not None:
+            if data['password'] == data['conform_password']:
+                if User.objects.filter(email = data['email']):
+                    return Response(error(self, 'Email is already in use'))
+                elif User.objects.filter(contact = data['contact']):
+                    return Response(error(self, 'Contact is already in use'))
                 else:
-                    usertypeobj = UserType.objects.create(user = userobj, usertype = 1)
-                    team_page = True
-                return Response(success(self,"Registration is successfull"))
-        else:
-            password != conform_password
-            return Response(error(self,"Password is Not match"))
+                    userobj=User.objects.create_user(first_name = data['first_name'], last_name=data['last_name'], username=data['email'], email = data['email'], password = data['password'],company_name = data['company_name'], country_code = data['country_code'],contact=data['contact'],aggrement = data['aggrement'], is_active = False)
 
+                    if TeamInvite.objects.filter(email = userobj.email):
+                        usertypeobj = UserType.objects.create(user = userobj, usertype = 2)
+                    else:
+                        usertypeobj = UserType.objects.create(user = userobj, usertype = 1)
+                    return Response(success(self,"Registration is successfull"))
+            else:
+                return Response(error(self, 'Password not match'))
+        else:
+            return Response(error(self, 'first_name, last_name, email, country_code, contact, company_name, password, conform_password is required'))
 
     def put(self, request,id=None):
         try:
