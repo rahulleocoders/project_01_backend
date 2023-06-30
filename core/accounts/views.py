@@ -33,8 +33,6 @@ import hashlib
 import base64
 from Cryptodome.Cipher import AES
 import os
-from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeError
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 key = '01234567890123456789015545678901'
@@ -67,7 +65,6 @@ def decrypt(key, ciphertext):
     plaintext = cipher.decrypt(ciphertext)
     padding_length = plaintext[-1]
     return plaintext[:-padding_length].decode('utf-8')
-
 
 def get_user_usertype_userprofile(request,id):
     if User.objects.filter(id=id):
@@ -235,7 +232,6 @@ class ApiSettingAPI(APIView):
                 return Response(error(self, "id is required"))
         except Exception as e:
             return Response(error(self,str(e)))
-
 
 class BotRoleApi(APIView):
     def post(self,request,format=None):
