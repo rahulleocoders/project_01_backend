@@ -1,5 +1,4 @@
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.views import APIView
 import json
 from django.contrib.auth import authenticate,login,logout
@@ -7,36 +6,35 @@ from django.http import JsonResponse
 from django.core import serializers as core_serializers
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework.permissions import IsAuthenticated
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from rest_framework.parsers import MultiPartParser, FormParser
 import os
-import uuid
-from rest_framework import generics, status, views, permissions
-import jwt
+from rest_framework import generics, status, permissions
 from django.core.mail import send_mail, EmailMessage
 from django.template.loader import render_to_string
 from django.conf import settings
-from django.urls import reverse 
+from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import update_last_login
 from datetime import datetime, timedelta
-from .models import User
 from .util import *
 from .models import *
 from .serializer import *
 from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-import hashlib
 import base64
 from Cryptodome.Cipher import AES
-import os
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
-from rest_framework.decorators import action
-from django.contrib.auth.hashers import check_password
+# import jwt
+# import uuid
+# from rest_framework.permissions import IsAuthenticated
+# import hashlib
+# from django.contrib.auth.tokens import PasswordResetTokenGenerator
+# from rest_framework.decorators import action
+# from django.contrib.auth.hashers import check_password
+
 key = '01234567890123456789015545678901'
 
 def encrypt(key, plaintext):
@@ -78,7 +76,6 @@ def get_user_usertype_userprofile(request,id):
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
-
     return {
         'refresh': str(refresh),
         'access': str(refresh.access_token),
@@ -131,7 +128,6 @@ class RegistrationAPI(APIView):
         except:
             return Response(error(self,"Invalid data"))
 
-
 class ChangePassword(APIView):       
     def put(self,request, id=None):
         old_password = request.data.get('old_password','')
@@ -152,14 +148,6 @@ class ChangePassword(APIView):
         else:
             return Response(error(self,"Invalid data"))
 
-
-def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
-
-    return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    }
 class OtpVerification(APIView):
     def post(self, request):
         email=request.data.get('email','')
@@ -282,56 +270,54 @@ class BotRoleApi(APIView):
     def post(self,request,format=None):
         try:
             data=request.data
-            user_id=data.get('user_id',None)
-            bot = data.get('bot', None)
-            if user_id is not None:
-                botroleobj=BotRole.objects.create(user_id=user_id,bot=bot)
-                botroleobj.save()
-
-                return Response(success(self, "bot data created successfully"))
+            if data['user_id'] is not None and data['bot'] is not None:
+                user, usertype = get_user_usertype_userprofile(request, data['user_id'])
+                if user:
+                    botroleobj=BotRole.objects.create(user_id=user,bot=data['bot'])
+                    return Response(success(self, "bot data created successfully"))
+                else:
+                    return Response(error(self, "User Not Found"))
             else:
-                return Response(error(self, "User Not Found"))
-        except:
-            return Response(error(self, "Invalid Data"))
-        
-    
-    def get(self, request, format=None):
-        try:
-            bot_roles = BotRole.objects.all()
-            serializer = BotRoleSerializer(bot_roles, many=True)
-            return Response(success(self, serializer.data))
-        except:
-            return Response(error(self, "Data Not Found"))
+                return Response(error(self, "user_id and bot is required"))
+        except Exception as e:
+            return Response(error(self,str(e)))
 
-    
+    def get(self, request, format=None, id=None):
+        try:
+            if id is not None:
+                user, usertype = get_user_usertype_userprofile(request, id)
+                if user:
+                    bot_roles = BotRole.objects.filter(user = user)
+                    serializer = BotRoleSerializer(bot_roles, many=True).data
+                    if serializer:
+                        return Response(success(self, serializer))
+                    else:
+                        return Response(error(self, 'Data not found'))
+                else:
+                    return Response(error(self, 'user not found'))
+            else:
+                return Response(error(self, 'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
     def delete(self, request, format=None, id=None):
         try:
             if id is not None:
-                user_bot = BotRole.objects.get(id=id)
-                user_bot.delete()
+                user_bot = BotRole.objects.get(id=id).delete()
                 return Response(success(self, "BotRole deleted successfully."))
             else:
                 return Response(error(self, "Invalid Data"))
         except Exception as e:
-            return Response(error(self, f'Error: {str(e)}'))
-      
-            
+            return Response(error(self,str(e)))
 
-    def put(self, request, format=None):
+    def put(self, request, format=None, id=None):
         try:
-            data = request.data
-            bot_id = data.get('bot_id', None)
-            bot = data.get('bot', None)
-            if bot_id is not None:
-                    bot_role = BotRole.objects.get(id=bot_id)
-                    bot_role.bot = bot
-                    bot_role.save()
-                    return Response(success(self, "Bot data updated successfully"))
-                
+            if id is not None:
+                bot_role = BotRole.objects.get(id=id)
+                bot_role.bot = request.data.get('bot', None)
+                bot_role.save()
+                return Response(success(self, "Bot data updated successfully"))
             else:
-                return Response(error(self, "Bot ID Not Found"))
-        except:
-            return Response(error(self, "Invalid Data"))
-        
-
-
+                return Response(error(self, 'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
