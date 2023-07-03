@@ -97,7 +97,7 @@ class RegistrationAPI(APIView):
                         usertypeobj = UserType.objects.create(user = userobj, usertype = 2)
                     else:
                         usertypeobj = UserType.objects.create(user = userobj, usertype = 1)
-                    return Response(success(self,"Registration is successfull"))
+                    return Response(success(self,{"msg":"Registration is successfull", "user":UserSerializer(userobj).data}))
             else:
                 return Response(error(self, 'Password not match'))
         else:
@@ -261,7 +261,7 @@ class BotRoleApi(APIView):
             if data['user_id'] is not None and data['bot'] is not None:
                 user, usertype = get_user_usertype_userprofile(request, data['user_id'])
                 if user:
-                    botroleobj=BotRole.objects.create(user_id=user,bot=data['bot'])
+                    botroleobj=BotRole.objects.create(user_id=user.id,bot=data['bot'])
                     return Response(success(self, "bot data created successfully"))
                 else:
                     return Response(error(self, "User Not Found"))
