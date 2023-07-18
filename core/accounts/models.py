@@ -29,6 +29,8 @@ class User(AbstractUser):
    contact = models.CharField(max_length=15, null=True, blank=True)
    is_contact_verfication = models.BooleanField(default=False, null=True, blank=True)
    is_email_verfication = models.BooleanField(default=False, null=True, blank=True)
+   otp = models.IntegerField(null=True, blank=True)
+   otp_expiry_date = models.DateTimeField(null=True, blank=True)
 
 class UserType(BaseContent):
    user = models.OneToOneField(User, on_delete=models.CASCADE)

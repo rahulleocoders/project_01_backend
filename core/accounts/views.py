@@ -97,6 +97,10 @@ class RegistrationAPI(APIView):
                         usertypeobj = UserType.objects.create(user = userobj, usertype = 2)
                     else:
                         usertypeobj = UserType.objects.create(user = userobj, usertype = 1)
+                    
+                    email_status=otp_send(self,userobj)
+                    print(email_status)
+                    
                     return Response(success(self,{"msg":"Registration is successfull", "user":UserSerializer(userobj).data}))
             else:
                 return Response(error(self, 'Password not match'))
@@ -115,6 +119,38 @@ class RegistrationAPI(APIView):
             return Response(success(self,"OTP verified successfully"))
         except:
             return Response(error(self,"Invalid data"))
+
+class EmailOtpVerfication(APIView):
+    def post(self, request):
+        data = request.data
+        if data['email'] != None and data['otp'] != None:
+            if User.objects.filter(email = data['email']):
+                userobj = User.objects.get(email = data['email'])
+                now = timezone.now()
+                if(now > userobj.otp_expiry_date):
+                    return Response(error(self, "OTP expired"))
+                else:
+                    return Response(success(self,"Suceess"))
+            else:
+                return Response(error(self, 'Inavalid email'))
+        else:
+            return Response(error(self, 'email and otp is required'))
+
+class ProfileDataChange(APIView):
+    def put(self, request, format = None):
+        data = request.data
+        if id is not None:
+            user, usertype = get_user_usertype_userprofile(request, data["id"])
+            if user:
+                user.contact = data.get("conatact")
+                user.email = data.get("email")
+                user.username = data.get("email")
+                user.save()
+                return Response(success(self,{"msg":"Updated is successfull", "user":UserSerializer(user).data}))
+            else:
+                return Response(error(self,"Invalid User Profile"))
+        else:
+            return Response(error(self, 'id is required'))
 
 class ChangePassword(APIView):       
     def put(self,request, id=None):

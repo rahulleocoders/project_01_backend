@@ -5,6 +5,11 @@ urlpatterns = [
     path('login/',LoginAPI.as_view(),name='login'),
     path('register/',RegistrationAPI.as_view(),name='register'),
     path('register/<int:id>',RegistrationAPI.as_view(),name='register'),
+
+    path('profile-data-change/',ProfileDataChange.as_view(),name='profile-data-change'),
+
+    path('email-otp-verfication/',EmailOtpVerfication.as_view(),name='email-otp-verfication'),
+
     path('changepassword/<int:id>',ChangePassword.as_view(),name='changepassword'),
  
     path('botroleapi/',BotRoleApi.as_view(),name='botroleapi'), # post
