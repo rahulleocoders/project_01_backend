@@ -15,3 +15,13 @@ class BotRoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = BotRole
         fields = "__all__"
+
+class TeamInviteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeamInvite
+        fields = ["id","first_name","last_name","email","country_code","contact","is_accept"]
+
+class LanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Language
+        fields = "__all__"

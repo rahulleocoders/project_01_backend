@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import *
+import csv
 
 @admin.register(User)
 class User_Admin(admin.ModelAdmin):
@@ -12,3 +13,7 @@ class UserType_Admin(admin.ModelAdmin):
 @admin.register(TeamInvite)
 class TeamInvite_Admin(admin.ModelAdmin):
     list_display = ['id', 'first_name', 'last_name', 'email', 'country_code', 'contact', 'expiration_date', 'is_accept']
+
+@admin.register(Language)
+class Admin_Language(admin.ModelAdmin):
+    list_display = ["id", "language_name"]

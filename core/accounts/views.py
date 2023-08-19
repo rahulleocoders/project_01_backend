@@ -1,5 +1,6 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.views import View
 import json
 from django.contrib.auth import authenticate,login,logout
 from django.http import JsonResponse
@@ -24,14 +25,16 @@ from .models import *
 from .serializer import *
 from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 import base64
 from Cryptodome.Cipher import AES
+from tablib import Dataset
+from django.db.models import Q
 
 # import jwt
 # import uuid
 # from rest_framework.permissions import IsAuthenticated
 # import hashlib
-# from django.contrib.auth.tokens import PasswordResetTokenGenerator
 # from rest_framework.decorators import action
 # from django.contrib.auth.hashers import check_password
 
@@ -83,29 +86,32 @@ def get_tokens_for_user(user):
 
 class RegistrationAPI(APIView):
     def post(self, request, format=None):
-        data = request.data
-        if data['first_name'] is not None and data['last_name'] is not None and data['email'] is not None and data['country_code'] is not None and data['contact'] is not None and data['company_name'] is not None and data['password'] is not None and data['conform_password'] is not None:
-            if data['password'] == data['conform_password']:
-                if User.objects.filter(email = data['email']):
-                    return Response(error(self, 'Email is already in use'))
-                elif User.objects.filter(contact = data['contact']):
-                    return Response(error(self, 'Contact is already in use'))
-                else:
-                    userobj=User.objects.create_user(first_name = data['first_name'], last_name=data['last_name'], username=data['email'], email = data['email'], password = data['password'],company_name = data['company_name'], country_code = data['country_code'],contact=data['contact'],aggrement = data['aggrement'], is_active = False)
-
-                    if TeamInvite.objects.filter(email = userobj.email):
-                        usertypeobj = UserType.objects.create(user = userobj, usertype = 2)
+        try:
+            data = request.data
+            if data['first_name'] is not None and data['last_name'] is not None and data['email'] is not None and data['country_code'] is not None and data['contact'] is not None and data['company_name'] is not None and data['password'] is not None and data['conform_password'] is not None:
+                if data['password'] == data['conform_password']:
+                    if User.objects.filter(email = data['email']):
+                        return Response(error(self, 'Email is already in use'))
+                    elif User.objects.filter(contact = data['contact']):
+                        return Response(error(self, 'Contact is already in use'))
                     else:
-                        usertypeobj = UserType.objects.create(user = userobj, usertype = 1)
-                    
-                    email_status=otp_send(self,userobj)
-                    print(email_status)
-                    
-                    return Response(success(self,{"msg":"Registration is successfull", "user":UserSerializer(userobj).data}))
+                        userobj=User.objects.create_user(first_name = data['first_name'], last_name=data['last_name'], username=data['email'], email = data['email'], password = data['password'],company_name = data['company_name'], country_code = data['country_code'],contact=data['contact'],aggrement = data['aggrement'], is_active = False)
+
+                        if TeamInvite.objects.filter(email = userobj.email):
+                            usertypeobj = UserType.objects.create(user = userobj, usertype = 2)
+                        else:
+                            usertypeobj = UserType.objects.create(user = userobj, usertype = 1)
+                        
+                        email_status=otp_send(self,userobj)
+                        print(email_status)
+                        
+                        return Response(success(self,{"msg":"Registration is successfull", "user":UserSerializer(userobj).data}))
+                else:
+                    return Response(error(self, 'Password not match'))
             else:
-                return Response(error(self, 'Password not match'))
-        else:
-            return Response(error(self, 'first_name, last_name, email, country_code, contact, company_name, password, conform_password is required'))
+                return Response(error(self, 'first_name, last_name, email, country_code, contact, company_name, password, conform_password is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
 
     def put(self, request,id=None):
         try:
@@ -117,70 +123,82 @@ class RegistrationAPI(APIView):
             userobj.is_active=True
             userobj.save()
             return Response(success(self,"OTP verified successfully"))
-        except:
-            return Response(error(self,"Invalid data"))
+        except Exception as e:
+            return Response(error(self,str(e)))
 
 class EmailOtpVerfication(APIView):
     def post(self, request):
-        data = request.data
-        if data['email'] != None and data['otp'] != None:
-            if User.objects.filter(email = data['email']):
-                userobj = User.objects.get(email = data['email'])
-                now = timezone.now()
-                if(now > userobj.otp_expiry_date):
-                    return Response(error(self, "OTP expired"))
+        try:
+            data = request.data
+            if data['email'] != None and data['otp'] != None:
+                if User.objects.filter(email = data['email']):
+                    userobj = User.objects.get(email = data['email'])
+                    now = timezone.now()
+                    if(now > userobj.otp_expiry_date):
+                        return Response(error(self, "OTP expired"))
+                    else:
+                        return Response(success(self,"Suceess"))
                 else:
-                    return Response(success(self,"Suceess"))
+                    return Response(error(self, 'Inavalid email'))
             else:
-                return Response(error(self, 'Inavalid email'))
-        else:
-            return Response(error(self, 'email and otp is required'))
+                return Response(error(self, 'email and otp is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
 
 class ProfileDataChange(APIView):
     def put(self, request, format = None):
-        data = request.data
-        if id is not None:
-            user, usertype = get_user_usertype_userprofile(request, data["id"])
-            if user:
-                user.contact = data.get("conatact")
-                user.email = data.get("email")
-                user.username = data.get("email")
-                user.save()
-                return Response(success(self,{"msg":"Updated is successfull", "user":UserSerializer(user).data}))
+        try:
+            data = request.data
+            if id is not None:
+                user, usertype = get_user_usertype_userprofile(request, data["id"])
+                if user:
+                    user.contact = data.get("conatact")
+                    user.email = data.get("email")
+                    user.username = data.get("email")
+                    user.save()
+                    return Response(success(self,{"msg":"Updated is successfull", "user":UserSerializer(user).data}))
+                else:
+                    return Response(error(self,"Invalid User Profile"))
             else:
-                return Response(error(self,"Invalid User Profile"))
-        else:
-            return Response(error(self, 'id is required'))
+                return Response(error(self, 'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
 
 class ChangePassword(APIView):       
     def put(self,request, id=None):
-        old_password = request.data.get('old_password','')
-        new_password=request.data.get('new_password','')
-        conform_password = request.data.get('conform_password','')
-        if User.objects.filter(id=id):
-            userobj=User.objects.get(id=id)
-            userobj=authenticate(username=userobj.username,password=old_password)
-            if userobj is not None:
-                if new_password == conform_password:
-                    userobj.set_password(new_password)
-                    userobj.save()
-                    return Response(success(self,"password updated"))
+        try:
+            old_password = request.data.get('old_password','')
+            new_password=request.data.get('new_password','')
+            conform_password = request.data.get('conform_password','')
+            if User.objects.filter(id=id):
+                userobj=User.objects.get(id=id)
+                userobj=authenticate(username=userobj.username,password=old_password)
+                if userobj is not None:
+                    if new_password == conform_password:
+                        userobj.set_password(new_password)
+                        userobj.save()
+                        return Response(success(self,"password updated"))
+                    else:
+                        return Response(error(self,'Password and conform password Not Matched'))
                 else:
-                    return Response(error(self,'Password and conform password Not Matched'))
+                    return Response(error(self,"User not found"))
             else:
-                return Response(error(self,"User not found"))
-        else:
-            return Response(error(self,"Invalid data"))
+                return Response(error(self,"Invalid User"))
+        except Exception as e:
+            return Response(error(self,str(e)))
 
 class OtpVerification(APIView):
     def post(self, request):
-        email=request.data.get('email','')
-        contact=request.data.get('contact','')
-        is_contact_verfication=request.data.get('is_contact_verfication','False')
-        is_email_verfication=request.data.get('is_email_verfication','False')
-        userobj=User.objects.update(username=email,contact=contact,is_contact_verfication=is_contact_verfication,
-                                is_email_verfication=is_email_verfication)
-        return Response(success(self,"OTP verified successfully"))
+        try:
+            email=request.data.get('email','')
+            contact=request.data.get('contact','')
+            is_contact_verfication=request.data.get('is_contact_verfication','False')
+            is_email_verfication=request.data.get('is_email_verfication','False')
+            userobj=User.objects.update(username=email,contact=contact,is_contact_verfication=is_contact_verfication,
+                                    is_email_verfication=is_email_verfication)
+            return Response(success(self,"OTP verified successfully"))
+        except Exception as e:
+            return Response(error(self,str(e)))
 
 class LoginAPI(APIView):
     def post(self, request, format=None):
@@ -236,7 +254,8 @@ class BulkInvitationAPI(APIView):
                             TeamInvite.objects.bulk_create(invites)
                             for invite_obj in invites:
                                 uid = urlsafe_base64_encode(force_bytes(invite_obj.id))
-                                absurl = 'http://127.0.0.1:8000/'
+                                absurl = 'http://127.0.0.1:8000/' 
+                                # absurl = 'http://127.0.0.1:8000/'
                                 email_subject = 'Invitation to join our site'
                                 email_body = render_to_string(
                                     'email_template.html',
@@ -260,6 +279,34 @@ class BulkInvitationAPI(APIView):
         except Exception as e:
             return Response(error(self,str(e)))
 
+    def get(self, request, format = None, id = None):
+        try:
+            if id is not None:
+                user, usertype = get_user_usertype_userprofile(request, id)
+                if user:
+                    invite_obj = TeamInvite.objects.filter(user=user)
+                    serializer = TeamInviteSerializer(invite_obj, many=True)
+                    if serializer.data:
+                        return Response(success(self, serializer.data))
+                    else:
+                        return Response(error(self, "Data Not Found"))
+                else:
+                    return Response(error(self, "Invalid user"))
+            else:
+                return Response(error(self, 'Id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+    
+    def delete(self, request, format = None, id = None):
+        try:
+            if id is not None:
+                invite_obj = TeamInvite.objects.get(id=id).delete()
+                return Response(success(self, 'Deleted Data Successfully'))
+            else:
+                return Response(error(self, 'Id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
 class ApiSettingAPI(APIView):
     def post(self, request, format = None):
         try:
@@ -272,7 +319,10 @@ class ApiSettingAPI(APIView):
                         user = user, api_key = encrypted_api, is_verfied = True
                     )
                     serializer = AISecreateSerializer(apiobj).data
-                    return Response(success(self, serializer))
+                    if serializer:
+                        return Response(success(self, serializer))
+                    else:
+                        return Response(error(self, "Data not Found"))
                 else:
                     return Response(error(self,'User Not Found'))
             else:
@@ -343,5 +393,90 @@ class BotRoleApi(APIView):
                 return Response(success(self, "Bot data updated successfully"))
             else:
                 return Response(error(self, 'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+# Language
+class AdminLangaugeAdd(APIView):
+    def post(self, request, format=None):
+        try:
+            dataset = Dataset()
+            file = request.FILES['myfile']
+            imported_data = dataset.load(file.read(),format='xlsx')
+            for data in imported_data:
+                value = Language.objects.get_or_create(language_name=data[0]) 
+            return Response(success(self,"Successfully imported"))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class SearchLangauge(APIView):
+    def get(self, request, format=None):
+        try:
+            language_obj = Language.objects.all()
+            serializer = LanguageSerializer(language_obj, many = True)
+            if serializer.data:
+                return Response(success(self, serializer.data))
+            else:
+                return Response(error(self, "Data not found"))
+        except Exception as e:
+            return Response(error(self,str(e)))
+    
+    def post(self, request, fromat= None):
+        try:
+            search = request.data.get('search')
+            if search:
+                language = Q(language_name__startswith = search)
+                language_obj = Language.objects.filter(language)
+                serializer = LanguageSerializer(language_obj, many = True)
+                if serializer.data:
+                    return Response(success(self, serializer.data))
+                else:
+                    return Response(error(self, "Data not found"))
+            else:
+                return Response(error(self, "search is required"))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class ForgetPassword(APIView):
+    def post(self, request, format = None):
+        try:
+            email = request.data.get("email")
+            if email:
+                if User.objects.filter(email=email):
+                    user = User.objects.get(email=email)
+                    uid = urlsafe_base64_encode(force_bytes(user.id))
+                    token = PasswordResetTokenGenerator().make_token(user)
+                    absurl = settings.SITE_URL+'/reset-password/'+"?uid="+uid+'&'+"token="+token
+                    email_body = 'Hi '+user.email + \
+                    ' Use the link below to reset your password \n' + absurl
+                    data = {'email_body': email_body, 'to_email': user.email,'email_subject': 'Verify your email'}
+                    Util.send_email(data)
+                    return Response(success(self,'Email Sent Successfull'))
+                else:
+                    return Response(error(self,'User Not Found'))
+            else:
+                return Response(error(self, "email is required"))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class ResetPassword(APIView):
+    def post(self, request, format=None):
+        try:
+            uid = request.data.get('uid')
+            token = request.data.get('token')
+            password = request.data.get('password')
+            cnf_password = request.data.get('cnf_password')
+            id = smart_str(urlsafe_base64_decode(uid))
+            user = User.objects.get(id=id)
+            if password and cnf_password != None:
+                if password != cnf_password:
+                    return Response(error(self, "Password and Confirm Password doesn't match"))
+                if not PasswordResetTokenGenerator().check_token(user, token):
+                    return Response(error(self,'Token is not Valid or Expired'))
+                user.set_password(password)
+                user.save()
+                return Response(success(self,'Password Updated Successfully'))
+            else:
+                return Response(error(self,'password and password1 is required'))
         except Exception as e:
             return Response(error(self,str(e)))

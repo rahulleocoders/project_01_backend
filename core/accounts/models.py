@@ -56,3 +56,16 @@ class AISecrateSetting(BaseContent):
    user = models.OneToOneField(User, on_delete=models.CASCADE)
    api_key = models.CharField(max_length=300, null=True, blank=True)
    is_verfied = models.BooleanField(default=False, null=True, blank=True)
+
+class Language(BaseContent):
+   language_name = models.CharField(max_length=300, null=True, blank=True)
+
+class Documents(BaseContent):
+   user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+   role = models.ForeignKey(BotRole, on_delete=models.SET_NULL, null=True, blank=True)
+   language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True, blank=True)
+   name = models.CharField(max_length=300, null=True, blank=True)
+   promts = models.TextField(null=True, blank=True)
+   maximum_token = models.CharField(max_length=300, null=True, blank=True)
+   temperature = models.CharField(max_length=300, null=True, blank=True)
+   status = models.BooleanField(default=False, null=True, blank=True)
