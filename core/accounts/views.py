@@ -26,6 +26,7 @@ from .serializer import *
 from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from rest_framework.permissions import IsAuthenticated
 import base64
 from Cryptodome.Cipher import AES
 from tablib import Dataset
@@ -33,7 +34,6 @@ from django.db.models import Q
 
 # import jwt
 # import uuid
-# from rest_framework.permissions import IsAuthenticated
 # import hashlib
 # from rest_framework.decorators import action
 # from django.contrib.auth.hashers import check_password
@@ -224,6 +224,7 @@ class LoginAPI(APIView):
             return Response(error(self,str(e)))
 
 class BulkInvitationAPI(APIView):
+    permission_classes= [IsAuthenticated]
     def post(self, request, format = None):
         try:
             data = request.data
@@ -308,6 +309,7 @@ class BulkInvitationAPI(APIView):
             return Response(error(self,str(e)))
 
 class ApiSettingAPI(APIView):
+    permission_classes= [IsAuthenticated]
     def post(self, request, format = None):
         try:
             data = request.data
@@ -341,13 +343,14 @@ class ApiSettingAPI(APIView):
             return Response(error(self,str(e)))
 
 class BotRoleApi(APIView):
+    permission_classes= [IsAuthenticated]
     def post(self,request,format=None):
         try:
             data=request.data
-            if data['user_id'] is not None and data['bot'] is not None:
+            if data['user_id'] is not None and data['role'] is not None and data['company'] is not None and data['name'] is not None and data['designation'] is not None:
                 user, usertype = get_user_usertype_userprofile(request, data['user_id'])
                 if user:
-                    botroleobj=BotRole.objects.create(user_id=user.id,bot=data['bot'])
+                    botroleobj=BotRole.objects.create(user_id=user.id,role=data['role'], company = data['company'], name = data['name'], designation = data['designation'])
                     return Response(success(self, "bot data created successfully"))
                 else:
                     return Response(error(self, "User Not Found"))
@@ -388,7 +391,10 @@ class BotRoleApi(APIView):
         try:
             if id is not None:
                 bot_role = BotRole.objects.get(id=id)
-                bot_role.bot = request.data.get('bot', None)
+                bot_role.role = request.data.get('role', None)
+                bot_role.company = request.data.get('company', None)
+                bot_role.name = request.data.get('name', None)
+                bot_role.designation = request.data.get('designation', None)
                 bot_role.save()
                 return Response(success(self, "Bot data updated successfully"))
             else:
@@ -410,6 +416,7 @@ class AdminLangaugeAdd(APIView):
             return Response(error(self,str(e)))
 
 class SearchLangauge(APIView):
+    permission_classes= [IsAuthenticated]
     def get(self, request, format=None):
         try:
             language_obj = Language.objects.all()
@@ -480,3 +487,232 @@ class ResetPassword(APIView):
                 return Response(error(self,'password and password1 is required'))
         except Exception as e:
             return Response(error(self,str(e)))
+
+class DocumnetsAPI(APIView):
+    permission_classes= [IsAuthenticated]
+    def post(self, request, format=None):
+        try:
+            user_obj = request.data.get('user')
+            role = request.data.get('role')
+            language = request.data.get('language')
+            name = request.data.get('name')
+            prompts = request.data.get('prompts')
+            maximum_token = request.data.get('maximum_token')
+            temperature = request.data.get('temperature')
+            user, usertype = get_user_usertype_userprofile(request, user_obj)
+            if user:
+                role_obj = BotRole.objects.get(id = role)
+                language_obj = Language.objects.get(id = language)
+                documents_obj = Documents.objects.create(
+                    user = user, role = role_obj, language = language_obj, name = name, prompts = prompts, maximum_token = int(maximum_token), temperature = int(temperature)
+                )
+                return Response(success(self, 'Successfully Created'))
+            else:
+                return Response(error(self,'User Not Found'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+    
+    def get(self, request, format = None, id = None):
+        try:
+            if id is not None:
+                user, usertype = get_user_usertype_userprofile(request, id)
+                if user:
+                    documents_obj = Documents.objects.filter(user = user)
+                    serializer = DocumentSerializer(documents_obj, many=True)
+                    if serializer.data:
+                        return Response(success(self, serializer.data))
+                    else:
+                        return Response(error(self, "Data Not Found"))
+                else:
+                    return Response(error(self,'User Not Found'))
+            else:
+                return Response(error(self,'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+        
+    def delete(self, request, format = None, id = None):
+        try:
+            if id is not None:
+                documents_obj = Documents.objects.get(id = id).delete()
+                return Response(success(self, 'Deleted Document Successfully'))
+            else:
+                return Response(error(self,'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+    
+    def put(self, request, format = None, id = None):
+        try:
+            if id is not None:
+                documents_obj = Documents.objects.get(id = id)
+                documents_obj.role = BotRole.objects.get(id = request.data.get('role'))
+                documents_obj.language = Language.objects.get(id = request.data.get('language'))
+                documents_obj.name = request.data.get('name')
+                documents_obj.prompts = request.data.get('prompts')
+                documents_obj.maximum_token = request.data.get('maximum_token')
+                documents_obj.temperature = request.data.get('temperature')
+                documents_obj.save()
+                return Response(success(self, "Documents updated successfully"))
+            else:
+                return Response(error(self,'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class GetDocumentsAPI(APIView):
+    permission_classes= [IsAuthenticated]
+    def get(self, request, format = None, id = None):
+        try:
+            if id is not None:
+                documents_obj = Documents.objects.get(id = id)
+                serializer = GetDocumentsSerializer(documents_obj)
+                if serializer.data:
+                    return Response(success(self, serializer.data))
+                else:
+                    return Response(error(self, "Data not found"))
+            else:
+                return Response(error(self,'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class GetDoucmentsCount(APIView):
+    permission_classes= [IsAuthenticated]
+    def get(self, request, format = None, id = None):
+        try:
+            if id is not None:
+                user, usertype = get_user_usertype_userprofile(request, id)
+                if user:
+                    all_documents = Documents.objects.filter(user = user).count()
+                    in_progress = Documents.objects.filter(user = user).filter(status = False).count()
+                    complete = Documents.objects.filter(user = user).filter(status = True).count()
+                    return Response(success(self, {"all_documents": all_documents, "in_progress": in_progress, "complete": complete}))
+                else:
+                    return Response(error(self,'User Not Found'))
+            else:
+                return Response(error(self,'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class Header_Foorter_Document(APIView):
+    permission_classes= [IsAuthenticated]
+    def post(self, request, format = None):
+        try:
+            user_id = request.POST.get('user')
+            header = request.POST.get('header')
+            header_align = request.POST.get('header_align')
+            header_logo = request.FILES.get('header_logo')
+            header_logo_size = request.POST.get('header_logo_size')
+            header_paragraph = request.POST.get('header_paragraph')
+            footer = request.POST.get('footer')
+            footer_align = request.POST.get('footer_align')
+            page_number = request.POST.get('page_number')
+            skip_pages = request.POST.get('skip_pages')
+            footer_paragraph = request.POST.get('footer_paragraph')
+            user, usertype = get_user_usertype_userprofile(request, user_id)
+            if user:
+                if DocumentSetting_Header_Footer.objects.filter(user = user):
+                    header_footer_obj = DocumentSetting_Header_Footer.objects.get(user = user)
+                    header_footer_obj.header = header
+                    header_footer_obj.header_align = header_align
+                    if header_logo:
+                        header_footer_obj.header_logo = header_logo
+                    else:
+                        pass
+                    header_footer_obj.header_logo_size = header_logo_size
+                    header_footer_obj.header_paragraph = header_paragraph
+                    header_footer_obj.footer = footer
+                    header_footer_obj.footer_align = footer_align
+                    header_footer_obj.page_number = page_number
+                    header_footer_obj.skip_pages = skip_pages
+                    header_footer_obj.footer_paragraph = footer_paragraph
+                    header_footer_obj.save()
+                    return Response(success(self, 'Successfully updated'))
+                else:
+                    header_footer_obj = DocumentSetting_Header_Footer.objects.create(
+                        user = user, header = header, header_align = header_align, header_logo = header_logo, header_logo_size = header_logo_size, header_paragraph = header_paragraph, footer = footer, footer_align = footer_align, page_number = page_number, skip_pages = skip_pages, footer_paragraph = footer_paragraph
+                    )
+                    return Response(success(self, 'Successfully created'))
+            else:
+                return Response(error(self,'User Not Found'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+    
+    def get(self, request, format=None, id = None):
+        try:
+            if id is not None:
+                user, usertype = get_user_usertype_userprofile(request, id)
+                if user:
+                    header_footer_obj = DocumentSetting_Header_Footer.objects.get(user = user)
+                    serializer = Header_Footer_Serializer(header_footer_obj)
+                    if serializer.data:
+                        return Response(success(self, serializer.data))
+                    else:
+                        return Response(error(self,"Data Not Found"))
+                else:
+                    return Response(error(self,'User Not Found'))
+            else:
+                return Response(error(self,'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class Text_Setting_Documents(APIView):
+    permission_classes= [IsAuthenticated]
+    def post(self, request, format = None):
+        try:
+            user_id = request.data.get('user')
+            titles = request.data.get('titles')
+            normal = request.data.get('normal')
+            h1 = request.data.get('h1')
+            h2 = request.data.get('h2')
+            h3 = request.data.get('h3')
+            h4 = request.data.get('h4')
+            h5 = request.data.get('h5')
+            h6 = request.data.get('h6')
+            user, usertype = get_user_usertype_userprofile(request, user_id)
+            if user:
+                text_settings, created = DocumentSetting_Text_Setting.objects.get_or_create(user=user)
+                if not created:
+                    # Update existing text settings
+                    text_settings.title = titles
+                    text_settings.normal = normal
+                    text_settings.h1 = h1
+                    text_settings.h2 = h2
+                    text_settings.h3 = h3
+                    text_settings.h4 = h4
+                    text_settings.h5 = h5
+                    text_settings.h6 = h6
+                    text_settings.save()
+                    return Response(success(self, "Successfully updated"))
+                else:
+                    # Create new text settings
+                    text_settings.title = titles
+                    text_settings.normal = normal
+                    text_settings.h1 = h1
+                    text_settings.h2 = h2
+                    text_settings.h3 = h3
+                    text_settings.h4 = h4
+                    text_settings.h5 = h5
+                    text_settings.h6 = h6
+                    text_settings.save()
+                    return Response(success(self, "Successfully created"))
+            else:
+                return Response(error(self,'User Not Found'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+    def get(self, request, format = None, id = None):
+        try:
+            if id is not None:
+                user, usertype = get_user_usertype_userprofile(request, id)
+                if user:
+                    text_obj = DocumentSetting_Text_Setting.objects.filter(user = user)
+                    serializer = Text_Setting_Serializer(text_obj, many=True)
+                    if serializer.data:
+                        return Response(success(self, serializer.data))
+                    else:
+                        return Response(error(self, 'Data not found'))
+                else:
+                    return Response(error(self,'User Not Found'))
+            else:
+                return Response(error(self, "id is required"))
+        except Exception as e:
+            return Response(error(self,str(e)))
+

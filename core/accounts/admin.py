@@ -17,3 +17,18 @@ class TeamInvite_Admin(admin.ModelAdmin):
 @admin.register(Language)
 class Admin_Language(admin.ModelAdmin):
     list_display = ["id", "language_name"]
+
+@admin.register(BotRole)
+class Admin_BotRole(admin.ModelAdmin):
+    list_display = ["id", "user", "role", "company", "name", "designation", "is_default"]
+
+@admin.register(AISecrateSetting)
+class Admin_AISecrateSetting(admin.ModelAdmin):
+    list_display = ["id", "user", "api_key", "is_verfied"]
+
+@admin.register(Documents)
+class Admin_Documents(admin.ModelAdmin):
+    list_display = ["id", "user", "role", "language", "name", "prompts", "maximum_token", "temperature", "status"]
+
+admin.site.register(DocumentSetting_Text_Setting)
+admin.site.register(DocumentSetting_Header_Footer)

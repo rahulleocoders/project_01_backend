@@ -25,5 +25,19 @@ urlpatterns = [
 
     path('forget-password/',ForgetPassword.as_view(),name='forget_password'),
     path('reset-password/',ResetPassword.as_view(),name='reset_password'),
+    
+    path('document/',DocumnetsAPI.as_view(),name='document'), #post
+    path('document/<int:id>',DocumnetsAPI.as_view(),name='document'), #get, delete, put
 
+    path('get-document/<int:id>',GetDocumentsAPI.as_view(),name='get_document'), # get data from edit form
+
+    path('get-document-count/<int:id>',GetDoucmentsCount.as_view(),name='get_document_count'), #get the count for dashboard
+
+    path('document-header-footer/',Header_Foorter_Document.as_view(),name='document_header_footer'), #post, put
+    path('document-header-footer/<int:id>',Header_Foorter_Document.as_view(),name='document_header_footer'), #get,
+
+
+    path('text-setting-documents/',Text_Setting_Documents.as_view(),name='text_setting_documents'), #post, put
+    path('text-setting-documents/<int:id>',Text_Setting_Documents.as_view(),name='text_setting_documents'), #get,
+    
 ]

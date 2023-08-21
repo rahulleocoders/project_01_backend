@@ -38,7 +38,11 @@ class UserType(BaseContent):
 
 class BotRole(BaseContent):
    user = models.ForeignKey(User, on_delete=models.CASCADE)
-   bot = models.TextField(null=True, blank=True)
+   # bot = models.TextField(null=True, blank=True)
+   role = models.CharField(max_length=300, null=True, blank=True)
+   company = models.CharField(max_length=300, null=True, blank=True)
+   name = models.CharField(max_length=300, null=True, blank=True)
+   designation = models.CharField(max_length=300, null=True, blank=True)
    is_default = models.BooleanField(default=False, null=True, blank=True)
 
 class TeamInvite(BaseContent):
@@ -65,7 +69,31 @@ class Documents(BaseContent):
    role = models.ForeignKey(BotRole, on_delete=models.SET_NULL, null=True, blank=True)
    language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True, blank=True)
    name = models.CharField(max_length=300, null=True, blank=True)
-   promts = models.TextField(null=True, blank=True)
-   maximum_token = models.CharField(max_length=300, null=True, blank=True)
-   temperature = models.CharField(max_length=300, null=True, blank=True)
+   prompts = models.TextField(null=True, blank=True)
+   maximum_token = models.BigIntegerField(null=True, blank=True)
+   temperature = models.BigIntegerField(null=True, blank=True)
    status = models.BooleanField(default=False, null=True, blank=True)
+
+class DocumentSetting_Header_Footer(BaseContent):
+   user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+   header = models.BooleanField(default=False, null=True, blank=True)
+   header_align = models.CharField(max_length=300, null=True, blank=True)
+   header_logo = models.FileField(upload_to="Header_logo", null=True, blank=True)
+   header_logo_size = models.IntegerField(null=True, blank=True)
+   header_paragraph = models.TextField(null=True, blank=True)
+   footer = models.BooleanField(default=False, null=True, blank=True)
+   footer_align = models.CharField(max_length=300, null=True, blank=True)
+   page_number = models.BooleanField(default=False, null=True, blank=True)
+   skip_pages = models.BooleanField(default=False, null=True, blank=True)
+   footer_paragraph = models.TextField(null=True, blank=True)
+
+class DocumentSetting_Text_Setting(BaseContent):
+   user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+   title = models.JSONField(null=True, blank=True)
+   normal = models.JSONField(null=True, blank=True)
+   h1 = models.JSONField(null=True, blank=True)
+   h2 = models.JSONField(null=True, blank=True)
+   h3 = models.JSONField(null=True, blank=True)
+   h4 = models.JSONField(null=True, blank=True)
+   h5 = models.JSONField(null=True, blank=True)
+   h6 = models.JSONField(null=True, blank=True)
