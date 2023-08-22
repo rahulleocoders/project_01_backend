@@ -50,11 +50,11 @@ class TeamInvite(BaseContent):
    first_name = models.CharField(max_length=256, null=True, blank=True)
    last_name = models.CharField(max_length=256, null=True, blank=True)
    email = models.EmailField(null=True, blank=True)
-   country_code = models.CharField(max_length=5, null=True, blank=True)
-   contact = models.CharField(max_length=15, null=True, blank=True)
+   country_code = models.CharField(max_length=300, null=True, blank=True)
+   contact = models.CharField(max_length=300, null=True, blank=True)
    expiration_date = models.DateTimeField(null=True,blank=True)
    is_accept = models.BooleanField(default=False)
-   token = models.CharField(max_length=64, default=secrets.token_hex)
+   token = models.CharField(max_length=300, default=secrets.token_hex)
 
 class AISecrateSetting(BaseContent):
    user = models.OneToOneField(User, on_delete=models.CASCADE)

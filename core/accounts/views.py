@@ -256,8 +256,9 @@ class BulkInvitationAPI(APIView):
                             TeamInvite.objects.bulk_create(invites)
                             for invite_obj in invites:
                                 uid = urlsafe_base64_encode(force_bytes(invite_obj.id))
-                                absurl = 'http://127.0.0.1:8000/' 
-                                # absurl = 'http://127.0.0.1:8000/'
+                                current_site = get_current_site(request).domain
+                                # absurl = 'http://{current_site}/' 
+                                absurl = 'http://127.0.0.1:8000/'
                                 email_subject = 'Invitation to join our site'
                                 email_body = render_to_string(
                                     'email_template.html',
@@ -271,9 +272,9 @@ class BulkInvitationAPI(APIView):
                                 )
                                 email.send()
 
-                            return Response({'message': 'Emails sent successfully'})
+                            return Response(success(self,{'message': 'Emails sent successfully'}))
                     else:
-                        return Response(self, "Email is already used")
+                        return Response(error(self, "Email is already used"))
                 else:
                     return Response(error(self,'User Not Found'))
             else:
