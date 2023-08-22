@@ -65,3 +65,13 @@ class Text_Setting_Serializer(serializers.ModelSerializer):
         model = DocumentSetting_Text_Setting
         fields = "__all__"
 
+class Propts_Serializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    class Meta:
+        model = Documents
+        fields = ["id","user","name","prompts","status","created_on","last_modified"]
+    
+    def get_user(self, obj):
+        user = User.objects.get(id = obj.user.id)
+        name = str(user.first_name +" "+ user.last_name)
+        return name

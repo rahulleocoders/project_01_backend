@@ -33,6 +33,8 @@ urlpatterns = [
     path('document/',DocumnetsAPI.as_view(),name='document'), #post
     path('document/<int:id>',DocumnetsAPI.as_view(),name='document'), #get, delete, put
 
+    path('prompt-api/<int:id>',PromptsAPI.as_view(),name='prompt_api'), #get
+
     path('get-document/<int:id>',GetDocumentsAPI.as_view(),name='get_document'), # get data from edit form
 
     path('get-document-count/<int:id>',GetDoucmentsCount.as_view(),name='get_document_count'), #get the count for dashboard

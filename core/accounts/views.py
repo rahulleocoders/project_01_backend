@@ -424,6 +424,12 @@ class Set_Default_Bot_Role(APIView):
     def get(self, request, format=None, id=None):
         try:
             if id is not None:
+                user_id = request.GET.get('user')
+                user, usertype = get_user_usertype_userprofile(request, user_id)
+                if BotRole.objects.filter(user = user, is_default = True):
+                    bot = BotRole.objects.filter(user = user).get(is_default = True)
+                    bot.is_default = False
+                    bot.save()
                 botroleobj=BotRole.objects.get(id = id)
                 botroleobj.is_default = True
                 botroleobj.save()
@@ -583,6 +589,26 @@ class DocumnetsAPI(APIView):
                 documents_obj.temperature = request.data.get('temperature')
                 documents_obj.save()
                 return Response(success(self, "Documents updated successfully"))
+            else:
+                return Response(error(self,'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class PromptsAPI(APIView):
+    permission_classes= [IsAuthenticated]
+    def get(self, request, format = None, id = None):
+        try:
+            if id is not None:
+                user, usertype = get_user_usertype_userprofile(request, id)
+                if user:
+                    documents_obj = Documents.objects.filter(user = user)
+                    serializer = Propts_Serializer(documents_obj, many=True)
+                    if serializer.data:
+                        return Response(success(self, serializer.data))
+                    else:
+                        return Response(error(self, "Data Not Found"))
+                else:
+                    return Response(error(self,'User Not Found'))
             else:
                 return Response(error(self,'id is required'))
         except Exception as e:
