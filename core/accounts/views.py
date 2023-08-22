@@ -350,7 +350,7 @@ class BotRoleApi(APIView):
             if data['user_id'] is not None and data['role'] is not None and data['company'] is not None and data['name'] is not None and data['designation'] is not None:
                 user, usertype = get_user_usertype_userprofile(request, data['user_id'])
                 if user:
-                    botroleobj=BotRole.objects.create(user_id=user.id,role=data['role'], company = data['company'], name = data['name'], designation = data['designation'])
+                    botroleobj=BotRole.objects.create(user_id=user.id,role=data['role'], company = data['company'], name = data['name'], designation = data['designation'], is_default = False)
                     return Response(success(self, "bot data created successfully"))
                 else:
                     return Response(error(self, "User Not Found"))
@@ -364,10 +364,11 @@ class BotRoleApi(APIView):
             if id is not None:
                 user, usertype = get_user_usertype_userprofile(request, id)
                 if user:
-                    bot_roles = BotRole.objects.filter(user = user)
-                    serializer = BotRoleSerializer(bot_roles, many=True).data
-                    if serializer:
-                        return Response(success(self, serializer))
+                    bot_roles = BotRole.objects.filter(user = user).order_by("-id")
+                    print(bot_roles)
+                    serializer = BotRoleSerializer(bot_roles, many=True)
+                    if serializer.data:
+                        return Response(success(self, serializer.data))
                     else:
                         return Response(error(self, 'Data not found'))
                 else:

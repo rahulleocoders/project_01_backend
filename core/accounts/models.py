@@ -43,7 +43,7 @@ class BotRole(BaseContent):
    company = models.CharField(max_length=300, null=True, blank=True)
    name = models.CharField(max_length=300, null=True, blank=True)
    designation = models.CharField(max_length=300, null=True, blank=True)
-   is_default = models.BooleanField(default=False, null=True, blank=True)
+   is_default = models.BooleanField(null=True, blank=True)
 
 class TeamInvite(BaseContent):
    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
