@@ -402,6 +402,37 @@ class BotRoleApi(APIView):
         except Exception as e:
             return Response(error(self,str(e)))
 
+class GetData_BotRole(APIView):
+    permission_classes= [IsAuthenticated]
+    def get(self, request, format=None, id = None):
+        try:
+            if id is not None:
+                botroleobj=BotRole.objects.get(id = id)
+                serializer = BotRoleSerializer(botroleobj)
+                if serializer.data:
+                    return Response(success(self, serializer))
+                else:
+                    return Response(error(self, 'Data not found'))
+            else:
+                return Response(error(self, 'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+# Set Deafult
+class Set_Default_Bot_Role(APIView):
+    permission_classes= [IsAuthenticated]
+    def get(self, request, format=None, id=None):
+        try:
+            if id is not None:
+                botroleobj=BotRole.objects.get(id = id)
+                botroleobj.is_default = True
+                botroleobj.save()
+                return Response(success(self, "Bot role updated successfully"))
+            else:
+                return Response(error(self, 'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
 # Language
 class AdminLangaugeAdd(APIView):
     def post(self, request, format=None):

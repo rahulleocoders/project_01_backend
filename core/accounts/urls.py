@@ -13,7 +13,11 @@ urlpatterns = [
     path('changepassword/<int:id>',ChangePassword.as_view(),name='changepassword'),
  
     path('botroleapi/',BotRoleApi.as_view(),name='botroleapi'), # post
-    path('botroleapi/<int:id>/',BotRoleApi.as_view(),name='botroleapi'),  #put get delete
+    path('botroleapi/<int:id>',BotRoleApi.as_view(),name='botroleapi'),  #put get delete
+    
+    path('get-role/<int:id>',GetData_BotRole.as_view(),name='get_role'),  #get the bot role data
+    
+    path('set-default/<int:id>',Set_Default_Bot_Role.as_view(),name='set_default'),  #default
 
     path('bulk-upload/',BulkInvitationAPI.as_view(),name='bulk_upload'),
     path('bulk-upload/<int:id>',BulkInvitationAPI.as_view(),name='bulk_upload'),

@@ -41,7 +41,8 @@ class DocumentSerializer(serializers.ModelSerializer):
     
     def get_role(self, obj):
         role = BotRole.objects.get(id = obj.role.id)
-        return role.bot
+        serializer = BotRoleSerializer(role)
+        return serializer.data
 
     def get_language(self, obj):
         language = Language.objects.get(id = obj.language.id)
