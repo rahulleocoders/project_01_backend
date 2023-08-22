@@ -3,13 +3,14 @@ from django.utils import timezone
 import random
 from datetime import datetime, timedelta
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, send_mail
 import threading
 from . models import *
 from django.template.loader import render_to_string
 from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from bs4 import BeautifulSoup
+from django.conf import settings
 
 def success(self, msg):
     response = {
@@ -59,7 +60,12 @@ def otp_send(base,user):
         email_subject = 'Invitation to join our site'
         email_body_html = render_to_string(
             'email_verfiaction.html',
-            {"otp":user_otp}
+            {
+                "name": str(userobj.first_name + ' ' + userobj.last_name),
+                'body': 'This email is to verify whether we can send email in Django from Gmail account.',
+                'sign': 'Project 01',
+                "otp":user_otp,
+            }
         )
 
         soup = BeautifulSoup(email_body_html, 'html.parser')

@@ -32,3 +32,4 @@ class Admin_Documents(admin.ModelAdmin):
 
 admin.site.register(DocumentSetting_Text_Setting)
 admin.site.register(DocumentSetting_Header_Footer)
+admin.site.register(FontFamilyStyle)

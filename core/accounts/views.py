@@ -31,6 +31,7 @@ import base64
 from Cryptodome.Cipher import AES
 from tablib import Dataset
 from django.db.models import Q
+from accounts.paginatorviews import MyPagination
 
 # import jwt
 # import uuid
@@ -450,6 +451,52 @@ class AdminLangaugeAdd(APIView):
             for data in imported_data:
                 value = Language.objects.get_or_create(language_name=data[0]) 
             return Response(success(self,"Successfully imported"))
+        except Exception as e:
+            return Response(error(self,str(e)))
+        
+# Font Family
+class AdminFontAdd(APIView):
+    def post(self, request, format=None):
+        try:
+            dataset = Dataset()
+            file = request.FILES['myfile']
+            imported_data = dataset.load(file.read(),format='xlsx')
+            for data in imported_data:
+                value = FontFamilyStyle.objects.get_or_create(font_family=data[0]) 
+            return Response(success(self,"Successfully imported"))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class SearchFont(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, format=None):
+        try:
+            font_obj = FontFamilyStyle.objects.all()
+            paginator = MyPagination()
+            paginated_queryset = paginator.paginate_queryset(font_obj, request)
+            serializer = Font_Family_Serializer(paginated_queryset, many = True)
+            if serializer.data:
+                return Response(success(self, serializer.data))
+            else:
+                return Response(error(self, "Data Not Found"))
+        except Exception as e:
+            return Response(error(self,str(e)))
+        
+    def post(self, request, fromat = None):
+        try:
+            search = request.data.get('search')
+            if search:
+                font_family = Q(font_family__startswith = search)
+                font_family_obj = FontFamilyStyle.objects.filter(font_family)
+                paginator = MyPagination()
+                paginated_queryset = paginator.paginate_queryset(font_family_obj, request)
+                serializer = Font_Family_Serializer(paginated_queryset, many = True)
+                if serializer.data:
+                    return Response(success(self, serializer.data))
+                else:
+                    return Response(error(self, "Data Not Found"))
+            else:
+                return Response(error(self, "search is required"))
         except Exception as e:
             return Response(error(self,str(e)))
 

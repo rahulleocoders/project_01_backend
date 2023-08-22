@@ -27,6 +27,9 @@ urlpatterns = [
     path('Langauge-add/',AdminLangaugeAdd.as_view(),name='Langauge_add'),
     path('Langauge-list/',SearchLangauge.as_view(),name='Langauge_list'),
 
+    path('font-add/',AdminFontAdd.as_view(),name='font_add'),
+    path('font-list/',SearchFont.as_view(),name='font_list'),
+
     path('forget-password/',ForgetPassword.as_view(),name='forget_password'),
     path('reset-password/',ResetPassword.as_view(),name='reset_password'),
     

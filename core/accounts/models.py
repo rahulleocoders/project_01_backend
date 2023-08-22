@@ -64,6 +64,9 @@ class AISecrateSetting(BaseContent):
 class Language(BaseContent):
    language_name = models.CharField(max_length=300, null=True, blank=True)
 
+class FontFamilyStyle(BaseContent):
+   font_family = models.CharField(max_length=300, null=True, blank=True)
+
 class Documents(BaseContent):
    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
    role = models.ForeignKey(BotRole, on_delete=models.SET_NULL, null=True, blank=True)

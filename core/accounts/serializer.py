@@ -75,3 +75,8 @@ class Propts_Serializer(serializers.ModelSerializer):
         user = User.objects.get(id = obj.user.id)
         name = str(user.first_name +" "+ user.last_name)
         return name
+
+class Font_Family_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = FontFamilyStyle
+        fields = "__all__"
