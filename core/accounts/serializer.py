@@ -55,10 +55,20 @@ class GetDocumentsSerializer(serializers.ModelSerializer):
         model = Documents
         fields = "__all__"
 
-class Header_Footer_Serializer(serializers.ModelSerializer):
+class Header_Serializer(serializers.ModelSerializer):
     class Meta:
         model = DocumentSetting_Header_Footer
-        fields = "__all__"
+        fields = ["id", "user", "header", "header_align", "header_logo", "header_logo_size", "header_paragraph"]
+
+class Footer_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentSetting_Header_Footer
+        fields = ["id", "user", "footer", "footer_align", "page_number", "skip_pages", "footer_paragraph"]
+
+# class Header_Footer_Serializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = DocumentSetting_Header_Footer
+#         fields = "__all__"
 
 class Text_Setting_Serializer(serializers.ModelSerializer):
     class Meta:

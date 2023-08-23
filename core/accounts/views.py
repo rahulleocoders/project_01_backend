@@ -182,7 +182,7 @@ class ChangePassword(APIView):
                     else:
                         return Response(error(self,'Password and conform password Not Matched'))
                 else:
-                    return Response(error(self,"User not found"))
+                    return Response(error(self,"Old Password is inccorect"))
             else:
                 return Response(error(self,"Invalid User"))
         except Exception as e:
@@ -697,7 +697,7 @@ class GetDoucmentsCount(APIView):
         except Exception as e:
             return Response(error(self,str(e)))
 
-class Header_Foorter_Document(APIView):
+class Header_Document(APIView):
     permission_classes= [IsAuthenticated]
     def post(self, request, format = None):
         try:
@@ -707,47 +707,42 @@ class Header_Foorter_Document(APIView):
             header_logo = request.FILES.get('header_logo')
             header_logo_size = request.POST.get('header_logo_size')
             header_paragraph = request.POST.get('header_paragraph')
-            footer = request.POST.get('footer')
-            footer_align = request.POST.get('footer_align')
-            page_number = request.POST.get('page_number')
-            skip_pages = request.POST.get('skip_pages')
-            footer_paragraph = request.POST.get('footer_paragraph')
             user, usertype = get_user_usertype_userprofile(request, user_id)
             if user:
-                if DocumentSetting_Header_Footer.objects.filter(user = user):
-                    header_footer_obj = DocumentSetting_Header_Footer.objects.get(user = user)
-                    header_footer_obj.header = header
-                    header_footer_obj.header_align = header_align
+                header_obj, created = DocumentSetting_Header_Footer.objects.get_or_create(user = user)
+                if not created:
+                    header_obj.header = header
+                    header_obj.header_align = header_align
                     if header_logo:
-                        header_footer_obj.header_logo = header_logo
+                        header_obj.header_logo = header_logo
                     else:
                         pass
-                    header_footer_obj.header_logo_size = header_logo_size
-                    header_footer_obj.header_paragraph = header_paragraph
-                    header_footer_obj.footer = footer
-                    header_footer_obj.footer_align = footer_align
-                    header_footer_obj.page_number = page_number
-                    header_footer_obj.skip_pages = skip_pages
-                    header_footer_obj.footer_paragraph = footer_paragraph
-                    header_footer_obj.save()
-                    return Response(success(self, 'Successfully updated'))
+                    header_obj.header_logo_size = header_logo_size
+                    header_obj.header_paragraph = header_paragraph
+                    header_obj.save()
                 else:
-                    header_footer_obj = DocumentSetting_Header_Footer.objects.create(
-                        user = user, header = header, header_align = header_align, header_logo = header_logo, header_logo_size = header_logo_size, header_paragraph = header_paragraph, footer = footer, footer_align = footer_align, page_number = page_number, skip_pages = skip_pages, footer_paragraph = footer_paragraph
-                    )
-                    return Response(success(self, 'Successfully created'))
+                    header_obj.header = header
+                    header_obj.header_align = header_align
+                    if header_logo:
+                        header_obj.header_logo = header_logo
+                    else:
+                        pass
+                    header_obj.header_logo_size = header_logo_size
+                    header_obj.header_paragraph = header_paragraph
+                    header_obj.save()
+                return Response(success(self, "Successfully created"))
             else:
                 return Response(error(self,'User Not Found'))
         except Exception as e:
             return Response(error(self,str(e)))
-    
+        
     def get(self, request, format=None, id = None):
         try:
             if id is not None:
                 user, usertype = get_user_usertype_userprofile(request, id)
                 if user:
-                    header_footer_obj = DocumentSetting_Header_Footer.objects.get(user = user)
-                    serializer = Header_Footer_Serializer(header_footer_obj)
+                    header_obj = DocumentSetting_Header_Footer.objects.get(user = user)
+                    serializer = Header_Serializer(header_obj)
                     if serializer.data:
                         return Response(success(self, serializer.data))
                     else:
@@ -758,6 +753,118 @@ class Header_Foorter_Document(APIView):
                 return Response(error(self,'id is required'))
         except Exception as e:
             return Response(error(self,str(e)))
+
+class Footer_Documents(APIView):
+    def post(self, request, format = None):
+        try:
+            user_id = request.POST.get('user')
+            footer = request.POST.get('footer')
+            footer_align = request.POST.get('footer_align')
+            page_number = request.POST.get('page_number')
+            skip_pages = request.POST.get('skip_pages')
+            footer_paragraph = request.POST.get('footer_paragraph')
+            user, usertype = get_user_usertype_userprofile(request, user_id)
+            if user:
+                footer_obj, created = DocumentSetting_Header_Footer.objects.get_or_create(user = user)
+                if not created:
+                    footer_obj.footer = footer
+                    footer_obj.footer_align = footer_align
+                    footer_obj.page_number = page_number
+                    footer_obj.skip_pages = skip_pages
+                    footer_obj.footer_paragraph = footer_paragraph
+                    footer_obj.save()
+                else:
+                    footer_obj.footer = footer
+                    footer_obj.footer_align = footer_align
+                    footer_obj.page_number = page_number
+                    footer_obj.skip_pages = skip_pages
+                    footer_obj.footer_paragraph = footer_paragraph
+                    footer_obj.save()
+                return Response(success(self, "Successfully created"))
+            else:
+                return Response(error(self,'User Not Found'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+    
+    def get(self, request, format=None, id = None):
+        try:
+            if id is not None:
+                user, usertype = get_user_usertype_userprofile(request, id)
+                if user:
+                    footer_obj = DocumentSetting_Header_Footer.objects.get(user = user)
+                    serializer = Footer_Serializer(footer_obj)
+                    if serializer.data:
+                        return Response(success(self, serializer.data))
+                    else:
+                        return Response(error(self,"Data Not Found"))
+                else:
+                    return Response(error(self,'User Not Found'))
+            else:
+                return Response(error(self,'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+# class Header_Foorter_Document(APIView):
+#     permission_classes= [IsAuthenticated]
+#     def post(self, request, format = None):
+#         try:
+#             user_id = request.POST.get('user')
+#             header = request.POST.get('header')
+#             header_align = request.POST.get('header_align')
+#             header_logo = request.FILES.get('header_logo')
+#             header_logo_size = request.POST.get('header_logo_size')
+#             header_paragraph = request.POST.get('header_paragraph')
+#             footer = request.POST.get('footer')
+#             footer_align = request.POST.get('footer_align')
+#             page_number = request.POST.get('page_number')
+#             skip_pages = request.POST.get('skip_pages')
+#             footer_paragraph = request.POST.get('footer_paragraph')
+#             user, usertype = get_user_usertype_userprofile(request, user_id)
+#             if user:
+#                 if DocumentSetting_Header_Footer.objects.filter(user = user):
+#                     header_footer_obj = DocumentSetting_Header_Footer.objects.get(user = user)
+#                     header_footer_obj.header = header
+#                     header_footer_obj.header_align = header_align
+#                     if header_logo:
+#                         header_footer_obj.header_logo = header_logo
+#                     else:
+#                         pass
+#                     header_footer_obj.header_logo_size = header_logo_size
+#                     header_footer_obj.header_paragraph = header_paragraph
+#                     header_footer_obj.footer = footer
+#                     header_footer_obj.footer_align = footer_align
+#                     header_footer_obj.page_number = page_number
+#                     header_footer_obj.skip_pages = skip_pages
+#                     header_footer_obj.footer_paragraph = footer_paragraph
+#                     header_footer_obj.save()
+#                     return Response(success(self, 'Successfully updated'))
+#                 else:
+#                     header_footer_obj = DocumentSetting_Header_Footer.objects.create(
+#                         user = user, header = header, header_align = header_align, header_logo = header_logo, header_logo_size = header_logo_size, header_paragraph = header_paragraph, footer = footer, footer_align = footer_align, page_number = page_number, skip_pages = skip_pages, footer_paragraph = footer_paragraph
+#                     )
+#                     return Response(success(self, 'Successfully created'))
+#             else:
+#                 return Response(error(self,'User Not Found'))
+#         except Exception as e:
+#             return Response(error(self,str(e)))
+    
+#     def get(self, request, format=None, id = None):
+#         try:
+#             if id is not None:
+#                 user, usertype = get_user_usertype_userprofile(request, id)
+#                 if user:
+#                     header_footer_obj = DocumentSetting_Header_Footer.objects.get(user = user)
+#                     serializer = Header_Footer_Serializer(header_footer_obj)
+#                     if serializer.data:
+#                         return Response(success(self, serializer.data))
+#                     else:
+#                         return Response(error(self,"Data Not Found"))
+#                 else:
+#                     return Response(error(self,'User Not Found'))
+#             else:
+#                 return Response(error(self,'id is required'))
+#         except Exception as e:
+#             return Response(error(self,str(e)))
 
 class Text_Setting_Documents(APIView):
     permission_classes= [IsAuthenticated]

@@ -42,8 +42,14 @@ urlpatterns = [
 
     path('get-document-count/<int:id>',GetDoucmentsCount.as_view(),name='get_document_count'), #get the count for dashboard
 
-    path('document-header-footer/',Header_Foorter_Document.as_view(),name='document_header_footer'), #post, put
-    path('document-header-footer/<int:id>',Header_Foorter_Document.as_view(),name='document_header_footer'), #get,
+    # path('document-header-footer/',Header_Foorter_Document.as_view(),name='document_header_footer'), #post, put
+    # path('document-header-footer/<int:id>',Header_Foorter_Document.as_view(),name='document_header_footer'), #get,
+
+    path('document-header/',Header_Document.as_view(),name='document_header'), #post, put
+    path('document-header/<int:id>',Header_Document.as_view(),name='document_header'), #get,
+
+    path('document-footer/',Footer_Documents.as_view(),name='document_footer'), #post, put
+    path('document-footer/<int:id>',Footer_Documents.as_view(),name='document_footer'), #get,
 
 
     path('text-setting-documents/',Text_Setting_Documents.as_view(),name='text_setting_documents'), #post, put
