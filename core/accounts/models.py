@@ -67,6 +67,14 @@ class Language(BaseContent):
 class FontFamilyStyle(BaseContent):
    font_family = models.CharField(max_length=300, null=True, blank=True)
 
+approve_choise=(
+    ("in queue","in queue"),
+    ("not in queue","not in queue"),
+    ("message not found","message not found"),
+    ("complete","complete"),
+    ("failed","failed"),
+    )
+
 class Documents(BaseContent):
    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
    role = models.ForeignKey(BotRole, on_delete=models.SET_NULL, null=True, blank=True)
@@ -74,8 +82,9 @@ class Documents(BaseContent):
    name = models.CharField(max_length=300, null=True, blank=True)
    prompts = models.TextField(null=True, blank=True)
    maximum_token = models.BigIntegerField(null=True, blank=True)
-   temperature = models.BigIntegerField(null=True, blank=True)
-   status = models.BooleanField(default=False, null=True, blank=True)
+   temperature = models.FloatField(null=True, blank=True)
+   # status = models.BooleanField(default=False, null=True, blank=True)
+   status = models.CharField(max_length=300, choices=approve_choise, null=True, blank=True, default="in queue")
 
 class DocumentSetting_Header_Footer(BaseContent):
    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)

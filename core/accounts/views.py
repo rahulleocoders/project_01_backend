@@ -88,15 +88,25 @@ def get_tokens_for_user(user):
 class RegistrationAPI(APIView):
     def post(self, request, format=None):
         try:
-            data = request.data
-            if data['first_name'] is not None and data['last_name'] is not None and data['email'] is not None and data['country_code'] is not None and data['contact'] is not None and data['company_name'] is not None and data['password'] is not None and data['conform_password'] is not None:
-                if data['password'] == data['conform_password']:
-                    if User.objects.filter(email = data['email']):
+            first_name = request.data.get('first_name')
+            last_name = request.data.get('last_name')
+            email = request.data.get('email').lower()
+            country_code = request.data.get('country_code')
+            contact = request.data.get('contact')
+            company_name = request.data.get('company_name')
+            password = request.data.get('password')
+            conform_password = request.data.get('conform_password')
+            aggrement = request.data.get('aggrement')
+            # data = request.data
+            # if data['first_name'] is not None and data['last_name'] is not None and data['email'] is not None and data['country_code'] is not None and data['contact'] is not None and data['company_name'] is not None and data['password'] is not None and data['conform_password'] is not None:
+            if first_name is not None and last_name is not None and email is not None and country_code is not None and contact is not None and company_name is not None and password is not None and conform_password is not None:
+                if password == conform_password:
+                    if User.objects.filter(email = email):
                         return Response(error(self, 'Email is already in use'))
-                    elif User.objects.filter(contact = data['contact']):
-                        return Response(error(self, 'Contact is already in use'))
+                    # elif User.objects.filter(contact = contact):
+                    #     return Response(error(self, 'Contact is already in use'))
                     else:
-                        userobj=User.objects.create_user(first_name = data['first_name'], last_name=data['last_name'], username=data['email'], email = data['email'], password = data['password'],company_name = data['company_name'], country_code = data['country_code'],contact=data['contact'],aggrement = data['aggrement'], is_active = False)
+                        userobj=User.objects.create_user(first_name = first_name, last_name=last_name, username=email, email = email, password = password,company_name = company_name, country_code = country_code,contact=contact,aggrement = aggrement, is_active = False)
 
                         if TeamInvite.objects.filter(email = userobj.email):
                             usertypeobj = UserType.objects.create(user = userobj, usertype = 2)
@@ -138,7 +148,10 @@ class EmailOtpVerfication(APIView):
                     if(now > userobj.otp_expiry_date):
                         return Response(error(self, "OTP expired"))
                     else:
-                        return Response(success(self,"Suceess"))
+                        if userobj.otp == int(data['otp']):
+                            return Response(success(self,"Suceess"))
+                        else:
+                            return Response(error(self,"Otp not matched"))
                 else:
                     return Response(error(self, 'Inavalid email'))
             else:
@@ -204,11 +217,13 @@ class OtpVerification(APIView):
 class LoginAPI(APIView):
     def post(self, request, format=None):
         try:
-            data = request.data # {"emai":"yagnesh@yopmail.com","password":"1234"}
-            if data['email'] is not None and data['password'] is not None:
-                if User.objects.filter(username = data['email']): # checking
-                    userobj = User.objects.get(username = data['email'])
-                    user = authenticate(username = userobj.username, password = data['password'])
+            email = request.data.get('email').lower()
+            password = request.data.get('password')
+            # data = request.data # {"emai":"yagnesh@yopmail.com","password":"1234"}
+            if email is not None and password is not None:
+                if User.objects.filter(username = email): # checking
+                    userobj = User.objects.get(username = email)
+                    user = authenticate(username = userobj.username, password = password)
                     if user is not None:
                         token = get_tokens_for_user(user)
                         serializer = UserSerializer(user).data
@@ -233,8 +248,11 @@ class BulkInvitationAPI(APIView):
                 user, usertype = get_user_usertype_userprofile(request, data['user_id'])
                 if user:
                     user_emails = User.objects.values_list('username', flat=True)
+                    print(user_emails)
                     team_emails = [team_member['email'] for team_member in data['team_list']]
+                    print(team_emails)
                     remaining_emails = [email for email in team_emails if email not in user_emails]
+                    print(remaining_emails)
                     if remaining_emails:
                         team_invite_emails = TeamInvite.objects.values_list('email', flat=True)
                         remaining_emails = [email for email in remaining_emails if email not in team_invite_emails]
@@ -652,6 +670,26 @@ class PromptsAPI(APIView):
                 if user:
                     documents_obj = Documents.objects.filter(user = user)
                     serializer = Propts_Serializer(documents_obj, many=True)
+                    if serializer.data:
+                        return Response(success(self, serializer.data))
+                    else:
+                        return Response(error(self, "Data Not Found"))
+                else:
+                    return Response(error(self,'User Not Found'))
+            else:
+                return Response(error(self,'id is required'))
+        except Exception as e:
+            return Response(error(self,str(e)))
+
+class InProgressAPI(APIView):
+    def get(self, request, format=None, id = None):
+        try:
+            if id is not None:
+                user, usertype = get_user_usertype_userprofile(request, id)
+                if user:
+                    desired_statuses = ["in queue", "not in queue", "message not found"]
+                    documents_obj = Documents.objects.filter(user = user, status__in=desired_statuses)
+                    serializer = DocumentSerializer(documents_obj, many=True)
                     if serializer.data:
                         return Response(success(self, serializer.data))
                     else:

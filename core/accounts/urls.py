@@ -19,8 +19,8 @@ urlpatterns = [
     
     path('set-default/<int:id>',Set_Default_Bot_Role.as_view(),name='set_default'),  #default
 
-    path('bulk-upload/',BulkInvitationAPI.as_view(),name='bulk_upload'),
-    path('bulk-upload/<int:id>',BulkInvitationAPI.as_view(),name='bulk_upload'),
+    path('bulk-invitation/',BulkInvitationAPI.as_view(),name='bulk_invitation'),
+    path('bulk-invitation/<int:id>',BulkInvitationAPI.as_view(),name='bulk_invitation'),
     path('create-api/',ApiSettingAPI.as_view(),name='create_api'),
     path('delete-api/<int:id>',ApiSettingAPI.as_view(),name='delete_api'),
     
@@ -37,6 +37,8 @@ urlpatterns = [
     path('document/<int:id>',DocumnetsAPI.as_view(),name='document'), #get, delete, put
 
     path('prompt-api/<int:id>',PromptsAPI.as_view(),name='prompt_api'), #get
+
+    path('in-progress-api/<int:id>',InProgressAPI.as_view(),name='in_progress_api'), #get
 
     path('get-document/<int:id>',GetDocumentsAPI.as_view(),name='get_document'), # get data from edit form
 
